@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_alignParentBottom="true"
+    android:background="@drawable/controls_background"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Progress bar and time -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:id="@+id/position_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:layout_marginEnd="8dp" />
+
+        <SeekBar
+            android:id="@+id/seek_bar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:nextFocusDown="@id/play_pause_button" />
+
+        <TextView
+            android:id="@+id/duration_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:layout_marginStart="8dp" />
+
+    </LinearLayout>
+
+    <!-- Control buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <ImageButton
+            android:id="@+id/rewind_button"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_margin="8dp"
+            android:src="@android:drawable/ic_media_rew"
+            android:background="@drawable/button_normal"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:nextFocusRight="@id/play_pause_button"
+            android:nextFocusUp="@id/seek_bar" />
+
+        <ImageButton
+            android:id="@+id/play_pause_button"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_margin="8dp"
+            android:src="@android:drawable/ic_media_pause"
+            android:background="@drawable/button_normal"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:nextFocusLeft="@id/rewind_button"
+            android:nextFocusRight="@id/fast_forward_button"
+            android:nextFocusUp="@id/seek_bar" />
+
+        <ImageButton
+            android:id="@+id/fast_forward_button"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_margin="8dp"
+            android:src="@android:drawable/ic_media_ff"
+            android:background="@drawable/button_normal"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:nextFocusLeft="@id/play_pause_button"
+            android:nextFocusRight="@id/subtitle_button"
+            android:nextFocusUp="@id/seek_bar" />
+
+        <ImageButton
+            android:id="@+id/subtitle_button"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_margin="8dp"
+            android:src="@android:drawable/ic_dialog_info"
+            android:background="@drawable/button_normal"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:nextFocusLeft="@id/fast_forward_button"
+            android:nextFocusRight="@id/settings_button"
+            android:nextFocusUp="@id/seek_bar" />
+
+        <ImageButton
+            android:id="@+id/settings_button"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_margin="8dp"
+            android:src="@android:drawable/ic_menu_preferences"
+            android:background="@drawable/button_normal"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:nextFocusLeft="@id/subtitle_button"
+            android:nextFocusUp="@id/seek_bar" />
+
+    </LinearLayout>
+
+</LinearLayout>
