@@ -14,6 +14,9 @@ interface ApiService {
     @POST("/auth/login")
     suspend fun login(@Body loginRequest: LoginRequest): Response<LoginResponse>
 
+    @GET("/auth/validate")
+    suspend fun validateToken(@Header("Authorization") token: String): Response<TokenValidationResponse>
+
     @GET("/movies")
     suspend fun getMovies(@Header("Authorization") token: String): Response<List<Movie>>
 

@@ -111,6 +111,7 @@ class MovieListActivity : FragmentActivity() {
 
             CoroutineScope(Dispatchers.Main).launch {
                 try {
+                    Log.d("MovieListActivity", "Fetching movies with token: ${token.take(20)}...")
                     val response = Classes.ApiProvider.apiService.getMovies("Bearer $token")
                     if (response.isSuccessful) {
                         val movies = response.body() ?: emptyList()
@@ -137,11 +138,19 @@ class MovieListActivity : FragmentActivity() {
                             createRowsFromMovies(movies)
                         }
                     } else {
-                        Log.e("MovieListActivity", "Failed to fetch movies: ${response.code()}")
-                        Toast.makeText(activity, "Failed to load movies", Toast.LENGTH_LONG).show()
+                        val errorCode = response.code()
+                        val errorMessage = response.message()
+                        if (errorCode == 401) {
+                            Log.e("Auth", "401 UNAUTHORIZED in MovieListActivity - Token expired or invalid. Token: ${token.take(20)}...")
+                            Log.e("Auth", "Full error: $errorCode $errorMessage")
+                            Toast.makeText(activity, "Authentication failed. Please login again.", Toast.LENGTH_LONG).show()
+                        } else {
+                            Log.e("MovieListActivity", "Failed to fetch movies: $errorCode $errorMessage")
+                            Toast.makeText(activity, "Failed to load movies: $errorCode", Toast.LENGTH_LONG).show()
+                        }
                     }
                 } catch (e: Exception) {
-                    Log.e("MovieListActivity", "Error fetching movies: ${e.message}")
+                    Log.e("MovieListActivity", "Error fetching movies: ${e.message}", e)
                     Toast.makeText(activity, "Error loading movies", Toast.LENGTH_LONG).show()
                 }
             }

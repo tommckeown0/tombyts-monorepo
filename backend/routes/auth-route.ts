@@ -40,6 +40,15 @@ router.post("/login", async (req, res) => {
 	}
 });
 
+// Token validation endpoint - returns 200 if token is valid, 401 if invalid
+router.get("/validate", authenticateUser, (req, res) => {
+	// If we reach here, the token is valid (authenticateUser middleware passed)
+	res.status(200).json({
+		valid: true,
+		user: req.user,
+	});
+});
+
 // Middleware function to authenticate the user
 export function authenticateUser(
 	req: Request,

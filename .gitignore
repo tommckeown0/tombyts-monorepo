@@ -72,3 +72,6 @@ yarn-error.log*
 *.tmp
 *.temp
 .cache/
+
+# Misc
+scripts

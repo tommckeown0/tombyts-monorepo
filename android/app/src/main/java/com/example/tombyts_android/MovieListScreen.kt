@@ -45,19 +45,30 @@ fun MovieListScreen(token: String, navController: NavController) {
 
             LaunchedEffect(Unit) {
                 try {
+                    Log.d("MovieList", "Fetching movies with token: ${token.take(20)}...")
                     val response = Classes.ApiProvider.apiService.getMovies("Bearer $token")
                     if (response.isSuccessful) {
                         movies = response.body() ?: emptyList()
+                        Log.d("MovieList", "Successfully fetched ${movies.size} movies")
                     } else {
-                        error = "Failed to fetch movies"
-                        Log.e("API Error", "Failed to fetch movies: ${response.code()}")
-                        val authPreferences = SimpleAuthPreferences(navController.context)
-                        authPreferences.clearAuthData()
-                        Thread.sleep(3000)
-                        navController.navigate("login")
+                        val errorCode = response.code()
+                        val errorMessage = response.message()
+                        error = "Failed to fetch movies: $errorCode"
+
+                        if (errorCode == 401) {
+                            Log.e("Auth", "401 UNAUTHORIZED - Token expired or invalid. Token used: ${token.take(20)}...")
+                            Log.e("Auth", "Full error: $errorCode $errorMessage")
+                            val authPreferences = SimpleAuthPreferences(navController.context)
+                            authPreferences.clearAuthData()
+                            Thread.sleep(3000)
+                            navController.navigate("login")
+                        } else {
+                            Log.e("API Error", "Failed to fetch movies: $errorCode $errorMessage")
+                        }
                     }
                 } catch (e: Exception) {
                     error = "Error: ${e.message}"
+                    Log.e("MovieList", "Exception while fetching movies", e)
                 } finally {
                     isLoading = false
                 }

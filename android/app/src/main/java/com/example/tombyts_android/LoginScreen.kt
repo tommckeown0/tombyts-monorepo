@@ -38,12 +38,35 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarHostSta
     val context = LocalContext.current
     val authPreferences = remember { SimpleAuthPreferences(context) }
     val storedToken = remember { mutableStateOf(authPreferences.getAuthToken()) }
+    val coroutineScope = rememberCoroutineScope()
+    val apiService = Classes.ApiProvider.apiService
 
     LaunchedEffect(key1 = storedToken.value) {
         if (!storedToken.value.isNullOrEmpty()) {
-            navController.navigate("movieList/${storedToken.value}") {
-                popUpTo("login") { inclusive = true }
+            Log.d("Login", "Found stored token: ${storedToken.value?.take(20)}...")
+            Log.d("Login", "Validating token before navigation...")
+
+            // Validate the token before auto-navigating
+            try {
+                val response = apiService.validateToken("Bearer ${storedToken.value}")
+                if (response.isSuccessful) {
+                    Log.d("Login", "Token is valid! Auto-navigating to movie list")
+                    navController.navigate("movieList/${storedToken.value}") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                } else {
+                    Log.w("Login", "Token validation failed: ${response.code()} - Clearing expired token")
+                    authPreferences.clearAuthData()
+                    storedToken.value = null
+                }
+            } catch (e: Exception) {
+                Log.e("Login", "Error validating token: ${e.message}", e)
+                Log.w("Login", "Clearing potentially invalid token")
+                authPreferences.clearAuthData()
+                storedToken.value = null
             }
+        } else {
+            Log.d("Login", "No stored token, showing login screen")
         }
     }
 
@@ -108,26 +131,28 @@ fun LoginButton(
     Button(onClick = {
         coroutineScope.launch {
             try {
+                Log.d("Login", "Attempting login for user: $username")
                 val loginRequest = LoginRequest(username, password)
                 val response = apiService.login(loginRequest)
                 if (response.isSuccessful) {
                     val loginResponse = response.body()
                     val token = loginResponse?.token
                     if (token != null) {
+                        Log.d("Login", "Login successful, received token: ${token.take(20)}... (length: ${token.length})")
                         authPreferences.saveAuthToken(token)
                         onLoginSuccess(token)
                         navController.navigate("movieList/$token")
                     } else {
                         apiResponse = "Login failed: Token is null"
-                        Log.e("Login", apiResponse)
+                        Log.e("Login", "Login response successful but token is null")
                     }
                 } else {
                     apiResponse = "Login failed: ${response.code()} ${response.message()}"
-                    Log.e("Login", apiResponse)
+                    Log.e("Login", "Login failed: ${response.code()} ${response.message()}")
                 }
             } catch (e: Exception) {
                 apiResponse = "API Exception: ${e.message}"
-                Log.e("blah", "API Exception", e)
+                Log.e("Login", "Login exception: ${e.message}", e)
             }
         }
     }) {

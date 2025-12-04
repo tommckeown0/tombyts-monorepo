@@ -155,15 +155,22 @@ fun MoviePlayerScreen(movieTitle: String, token: String, navController: NavContr
     LaunchedEffect(Unit) {
         CoroutineScope(Dispatchers.Main).launch {
             try {
+                Log.d("MoviePlayer", "Fetching movie details for '$movieTitle' with token: ${token.take(20)}...")
                 val response = Classes.ApiProvider.apiService.getMovieDetails(movieTitle, "Bearer $token")
                 if (response.isSuccessful) {
                     val movieDetails = response.body()
                     moviePath = movieDetails?.path?.let { Uri.encode(it) }
+                    Log.d("MoviePlayer", "Successfully fetched movie details")
                 } else {
-                    Log.d("API Error", "Failed to fetch movie details: ${response.code()}")
+                    val errorCode = response.code()
+                    if (errorCode == 401) {
+                        Log.e("Auth", "401 UNAUTHORIZED in getMovieDetails - Token expired or invalid. Token: ${token.take(20)}...")
+                    } else {
+                        Log.e("API Error", "Failed to fetch movie details: $errorCode ${response.message()}")
+                    }
                 }
             } catch (e: Exception) {
-                Log.d("API Error", "Error: ${e.message}")
+                Log.e("MoviePlayer", "Exception fetching movie details: ${e.message}", e)
             }
         }
     }
@@ -174,14 +181,21 @@ fun MoviePlayerScreen(movieTitle: String, token: String, navController: NavContr
         hasSeeked.value = false
         if (moviePath != null) {
             try {
+                Log.d("MoviePlayer", "Fetching progress for '$movieTitle'")
                 val progressResponse = Classes.ApiProvider.apiService.getProgress(movieTitle, "Bearer $token")
                 if (progressResponse.isSuccessful) {
                     progress = progressResponse.body()?.progress ?: 0.0
+                    Log.d("MoviePlayer", "Progress fetched: ${progress}%")
                 } else {
-                    Log.d("API Error", "Failed to fetch progress: ${progressResponse.code()}")
+                    val errorCode = progressResponse.code()
+                    if (errorCode == 401) {
+                        Log.e("Auth", "401 UNAUTHORIZED in getProgress - Token expired or invalid. Token: ${token.take(20)}...")
+                    } else {
+                        Log.e("API Error", "Failed to fetch progress: $errorCode ${progressResponse.message()}")
+                    }
                 }
             } catch (e: Exception) {
-                Log.d("API Error", "Error fetching progress: ${e.message}")
+                Log.e("MoviePlayer", "Exception fetching progress: ${e.message}", e)
             }
 
             val mediaItemBuilder = MediaItem.Builder()
@@ -189,14 +203,21 @@ fun MoviePlayerScreen(movieTitle: String, token: String, navController: NavContr
 
             var subtitleContent: String? = null
             try {
+                Log.d("MoviePlayer", "Fetching subtitles for '$movieTitle'")
                 val subtitleResponse = Classes.ApiProvider.getSubtitleApiService().getSubtitles(movieTitle, "en", "Bearer $token")
                 if (subtitleResponse.isSuccessful) {
                     subtitleContent = subtitleResponse.body()
+                    Log.d("MoviePlayer", "Subtitles fetched successfully")
                 } else {
-                    Log.d("API Error", "Failed to fetch subtitles: ${subtitleResponse.code()}")
+                    val errorCode = subtitleResponse.code()
+                    if (errorCode == 401) {
+                        Log.e("Auth", "401 UNAUTHORIZED in getSubtitles - Token expired or invalid. Token: ${token.take(20)}...")
+                    } else {
+                        Log.e("API Error", "Failed to fetch subtitles: $errorCode ${subtitleResponse.message()}")
+                    }
                 }
             } catch (e: Exception) {
-                Log.d("API Error", "Error fetching subtitles: ${e.message}")
+                Log.e("MoviePlayer", "Exception fetching subtitles: ${e.message}", e)
             }
 
 //            val mediaItemBuilder = MediaItem.Builder()
@@ -239,11 +260,17 @@ fun MoviePlayerScreen(movieTitle: String, token: String, navController: NavContr
                 val progressUpdate = ProgressUpdate(currentProgress.toInt())
                     val response = Classes.ApiProvider.apiService.updateProgress(movieTitle, "Bearer $token", progressUpdate)
                     if (response.isSuccessful) {
+                        Log.d("MoviePlayer", "Progress updated: ${currentProgress.toInt()}%")
                     } else {
-                        Log.d("API Error", "Failed to update progress: ${response.code()}")
+                        val errorCode = response.code()
+                        if (errorCode == 401) {
+                            Log.e("Auth", "401 UNAUTHORIZED in updateProgress - Token expired or invalid. Token: ${token.take(20)}...")
+                        } else {
+                            Log.e("API Error", "Failed to update progress: $errorCode ${response.message()}")
+                        }
                     }
                 } catch (e: Exception) {
-                    Log.d("API Error", "Error updating progress: ${e.message}")
+                    Log.e("MoviePlayer", "Exception updating progress: ${e.message}", e)
                 }
             }
         }

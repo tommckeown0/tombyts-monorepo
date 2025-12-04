@@ -1,5 +1,6 @@
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 
 class SimpleAuthPreferences(context: Context) {
 
@@ -7,13 +8,20 @@ class SimpleAuthPreferences(context: Context) {
         context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
 
     fun saveAuthToken(token: String) {
+        Log.d("Auth", "Saving auth token: ${token.take(20)}... (length: ${token.length})")
         sharedPreferences.edit()
             .putString("authToken", token)
             .apply()
     }
 
     fun getAuthToken(): String? {
-        return sharedPreferences.getString("authToken", null)
+        val token = sharedPreferences.getString("authToken", null)
+        if (token != null) {
+            Log.d("Auth", "Retrieved stored token: ${token.take(20)}... (length: ${token.length})")
+        } else {
+            Log.d("Auth", "No stored token found")
+        }
+        return token
     }
 
     fun saveUsername(username: String) {
@@ -27,6 +35,7 @@ class SimpleAuthPreferences(context: Context) {
     }
 
     fun clearAuthData() {
+        Log.w("Auth", "Clearing auth data (token and username)")
         sharedPreferences.edit()
             .remove("authToken")
             .remove("username")
