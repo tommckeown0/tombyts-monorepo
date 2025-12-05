@@ -45,4 +45,9 @@ interface ApiService {
         @Path("language") language: String,
         @Header("Authorization") token: String
     ): Response<String> // Assuming the response is the subtitle content as a string
+
+    // Note: /movies endpoint returns all media (both movies and TV episodes)
+    // We parse the path field to distinguish between them:
+    // - "Movies/..." = movie
+    // - "TV Shows/..." = TV episode
 }
