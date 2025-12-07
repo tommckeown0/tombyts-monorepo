@@ -20,9 +20,12 @@ class MovieListActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("MovieListActivity", "🏗️ onCreate called, savedInstanceState=${if (savedInstanceState == null) "null" else "exists"}")
 
         // Get token from intent
         token = intent.getStringExtra("token")
+        val restoreTitle = intent.getStringExtra("restore_selection")
+        Log.d("MovieListActivity", "onCreate: token present=${token != null}, restore_selection='$restoreTitle'")
 
         // Create the leanback browse fragment programmatically
         val fragment = CustomBrowseFragment()
@@ -34,10 +37,33 @@ class MovieListActivity : FragmentActivity() {
         }
     }
 
+    override fun onNewIntent(newIntent: android.content.Intent) {
+        super.onNewIntent(newIntent)
+        Log.d("MovieListActivity", "⚡ onNewIntent called")
+        // Update the intent so fragment can read the new extras
+        setIntent(newIntent)
+
+        // Get the restore_selection from the new intent
+        val restoreTitle = newIntent.getStringExtra("restore_selection")
+        Log.d("MovieListActivity", "onNewIntent: restore_selection = '$restoreTitle'")
+        if (restoreTitle != null) {
+            Log.d("MovieListActivity", "onNewIntent: Restoring selection to $restoreTitle")
+            // Find the fragment and trigger restoration
+            val fragment = supportFragmentManager.findFragmentById(android.R.id.content) as? CustomBrowseFragment
+            if (fragment != null) {
+                Log.d("MovieListActivity", "onNewIntent: Fragment found, calling restoreSelectionIfNeeded")
+                fragment.restoreSelectionIfNeeded(restoreTitle)
+            } else {
+                Log.w("MovieListActivity", "onNewIntent: Fragment not found!")
+            }
+        }
+    }
+
     // Custom fragment that extends BrowseSupportFragment
     class CustomBrowseFragment : androidx.leanback.app.BrowseSupportFragment() {
 
         private var parsedMedia: ParsedMedia? = null
+        private var currentRowsAdapter: ArrayObjectAdapter? = null
 
         override fun onActivityCreated(savedInstanceState: Bundle?) {
             super.onActivityCreated(savedInstanceState)
@@ -148,6 +174,82 @@ class MovieListActivity : FragmentActivity() {
             }
 
             adapter = rowsAdapter
+            currentRowsAdapter = rowsAdapter
+
+            // Restore selection if coming back from player (for fresh onCreate)
+            val restoreTitle = activity?.intent?.getStringExtra("restore_selection")
+            if (restoreTitle != null) {
+                Log.d("MovieListActivity", "onCreate: Attempting to restore selection to: $restoreTitle")
+                restoreSelection(rowsAdapter, restoreTitle)
+            }
+        }
+
+        // Public method that can be called from the activity when onNewIntent is triggered
+        fun restoreSelectionIfNeeded(titleToFind: String) {
+            val adapter = currentRowsAdapter
+            if (adapter != null) {
+                Log.d("MovieListActivity", "restoreSelectionIfNeeded called for: $titleToFind")
+                restoreSelection(adapter, titleToFind)
+            } else {
+                Log.w("MovieListActivity", "restoreSelectionIfNeeded: adapter not ready yet")
+            }
+        }
+
+        private fun restoreSelection(rowsAdapter: ArrayObjectAdapter, titleToFind: String) {
+            Log.d("MovieListActivity", "restoreSelection: Searching for '$titleToFind', isResumed=$isResumed, view=$view")
+
+            // Search through all rows and items to find the matching title
+            for (rowIndex in 0 until rowsAdapter.size()) {
+                val row = rowsAdapter.get(rowIndex)
+                if (row is ListRow) {
+                    val itemsAdapter = row.adapter
+                    for (itemIndex in 0 until itemsAdapter.size()) {
+                        val item = itemsAdapter.get(itemIndex)
+                        val itemTitle = when (item) {
+                            is Movie -> item.title
+                            is TVShow -> item.name
+                            else -> null
+                        }
+
+                        if (itemTitle == titleToFind) {
+                            Log.d("MovieListActivity", "Found item at row=$rowIndex, position=$itemIndex")
+
+                            // Function to perform the actual selection
+                            val performSelection: () -> Unit = {
+                                Log.d("MovieListActivity", "Performing selection for row=$rowIndex, item=$itemIndex")
+                                setSelectedPosition(rowIndex, true)
+                                // Additional delay to ensure row header is selected before selecting item
+                                view?.postDelayed({
+                                    setSelectedPosition(rowIndex, true, object : ListRowPresenter.SelectItemViewHolderTask(itemIndex) {
+                                        override fun run(holder: Presenter.ViewHolder?) {
+                                            super.run(holder)
+                                            Log.d("MovieListActivity", "✓ Selection restored to: $titleToFind")
+                                        }
+                                    })
+                                }, 200)
+                            }
+
+                            // If fragment is resumed and view is ready, select immediately
+                            if (isResumed && view != null) {
+                                Log.d("MovieListActivity", "Fragment is resumed, selecting immediately")
+                                view?.post(performSelection)
+                            } else {
+                                // Otherwise wait for fragment to be ready
+                                Log.d("MovieListActivity", "Fragment not ready, waiting for onResume")
+                                view?.postDelayed({
+                                    if (isResumed) {
+                                        performSelection()
+                                    } else {
+                                        Log.w("MovieListActivity", "Fragment still not resumed after delay")
+                                    }
+                                }, 500)
+                            }
+                            return
+                        }
+                    }
+                }
+            }
+            Log.w("MovieListActivity", "Could not find item with title: $titleToFind")
         }
 
         private fun setupEventListeners() {
